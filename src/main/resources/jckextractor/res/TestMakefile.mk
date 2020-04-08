@@ -18,7 +18,7 @@ classes:
 
 lib:
 	mkdir lib
-	! [ -f src/share/lib/jni/jckjni.c ] || $(CC) -fPIC -shared -Isrc/share/lib/jni/include -Isrc/share/lib/jni/include/amd64 -o lib/libjckjni.so 
+	! [ -f src/share/lib/jni/jckjni.c ] || $(CC) -fPIC -shared -Isrc/share/lib/jni/include -Isrc/share/lib/jni/include/amd64 -o lib/libjckjni.so src/share/lib/jni/jckjni.c
 	! [ -f src/share/lib/jvmti/jckjvmti.c ] || $(CC) -fPIC -shared -I. -Isrc/share/lib/jvmti/include -Isrc/share/lib/jni/include/amd64 -Isrc/share/lib/jni/include -o lib/libjckjvmti.so src/share/lib/jvmti/jckjvmti.c
 
 clean:

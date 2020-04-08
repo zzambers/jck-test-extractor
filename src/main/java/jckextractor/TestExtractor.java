@@ -141,9 +141,8 @@ public class TestExtractor {
         if (hasNatives) {
             Path outputSrcDir = options.outputDir.resolve("src");
             Path inputSrcShareDir = inputSrcDir.resolve("share");
-            Path outputSrcShareDir = outputSrcDir.resolve("share");
-            Files.createDirectories(outputSrcShareDir);
-            recursiveCopy(inputSrcShareDir, outputSrcShareDir);
+            Files.createDirectories(outputSrcDir);
+            recursiveCopy(inputSrcShareDir, outputSrcDir);
         }
 
         try (InputStream is = TestExtractor.class.getClassLoader().getResourceAsStream("jckextractor/res/TestMakefile.mk")) {
