@@ -316,6 +316,9 @@ public class TestExtractor {
         @Override
         public JavaFileObject getJavaFileForInput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind) throws IOException {
             JavaFileObject file = super.getJavaFileForInput(location, className, kind);
+            if (file == null) {
+                return null;
+            }
             if (location.equals(StandardLocation.SOURCE_PATH)) {
                 return new MonitoringJavaFileObject(file);
             }
