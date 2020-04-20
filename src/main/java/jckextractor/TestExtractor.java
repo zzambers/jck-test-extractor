@@ -167,7 +167,7 @@ public class TestExtractor {
                 = "Args: \n"
                 + "  --help                prints this help\n"
                 + "  --jck-dir [DIR]       directory with unpacked jck (unpacked with -i shell_scripts)\n"
-                + "  --optutput-dir [DIR]  directory where to place extracted test\n"
+                + "  --output-dir [DIR]    directory where to place extracted test\n"
                 + "  --test [TEST]         name of the test to extract\n";
         System.out.print(help);
     }
