@@ -125,8 +125,34 @@ public class TestExtractor {
         }
 
         Path inputSrcDir = options.jckDir.resolve("src");
+        Path testSrcDir2 = inputSrcDir.resolve(options.jckDir.relativize(options.testSrcDir));
+        if (Files.isDirectory(testSrcDir2)) {
+            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(options.testSrcDir)) {
+                for (Path p : dirStream) {
+                    String name = p.toString();
+                    if (!Files.isDirectory(p)) {
+                        if (name.endsWith(".java")) {
+                            javaSrcFiles.add(p.toFile());
+                        }
+                        depsStrings.add(name);
+                    }
+                }
+            }
+        }
+
         List<File> srcDirs = new ArrayList();
         srcDirs.add(inputSrcDir.toFile());
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(inputSrcDir)) {
+            for (Path p : dirStream) {
+                if (Files.isDirectory(p)) {
+                    String name = p.getFileName().toString();
+                    if (name.startsWith("jck.") && ! name.endsWith(".module")) {
+                        srcDirs.add(p.toFile());
+                    }
+                }
+            }
+        }
+
         getDependencies(depsStrings, javaSrcFiles, srcDirs);
 
         FileSystem fs = options.jckDir.getFileSystem();
