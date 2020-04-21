@@ -243,12 +243,15 @@ public class TestExtractor {
         if (testUrl.startsWith("/")) {
             testUrl = testUrl.substring(1);
         }
-        Path testSrcDir = jckDir.resolve(testUrl.replace("/", fs.getSeparator()));
+        if (testUrl.startsWith("tests/")) {
+            testUrl = testUrl.substring(6);
+        }
+        Path testSrcDir = jckDir.resolve("tests").resolve(testUrl.replace("/", fs.getSeparator()));
         if (!Files.isDirectory(testSrcDir)) {
             System.err.println("ERR: Wrong test name: " + options.testNameArg);
             System.exit(1);
         }
-        options.testSrcDir = testSrcDir;
+        options.testSrcDir = testSrcDir.toAbsolutePath();
 
         return options;
     }
