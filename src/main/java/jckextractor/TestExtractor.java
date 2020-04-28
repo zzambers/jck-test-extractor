@@ -57,7 +57,7 @@ import javax.tools.ToolProvider;
  */
 public class TestExtractor {
 
-    public static void recursiveCopy(Path srcDir, Path targetDir) throws IOException {
+    public static void recursiveCopy(final Path srcDir, final Path targetDir) throws IOException {
         final Path parent = srcDir.getParent();
         final Path srcRelativizeDir = (parent != null) ? parent : srcDir;
         FileVisitor<Path> fv = new SimpleFileVisitor<Path>() {
