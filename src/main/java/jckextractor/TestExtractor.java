@@ -24,18 +24,13 @@
 package jckextractor;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -46,25 +41,6 @@ import java.util.Set;
  * @author zzambers
  */
 public class TestExtractor {
-
-    public static void recursiveCopy(final Path srcDir, final Path targetDir) throws IOException {
-        final Path parent = srcDir.getParent();
-        final Path srcRelativizeDir = (parent != null) ? parent : srcDir;
-        FileVisitor<Path> fv = new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path t, BasicFileAttributes bfa) throws IOException {
-                Files.createDirectories(targetDir.resolve(srcRelativizeDir.relativize(t)));
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFile(Path t, BasicFileAttributes bfa) throws IOException {
-                Files.copy(t, targetDir.resolve(srcRelativizeDir.relativize(t)));
-                return FileVisitResult.CONTINUE;
-            }
-        };
-        Files.walkFileTree(srcDir, fv);
-    }
 
     public static void extractTest(Options options) throws Exception {
         Set<String> depsStrings = new HashSet();
@@ -129,7 +105,7 @@ public class TestExtractor {
             Path outputSrcDir = options.outputDir.resolve("src");
             Path inputSrcShareDir = inputSrcDir.resolve("share");
             Files.createDirectories(outputSrcDir);
-            recursiveCopy(inputSrcShareDir, outputSrcDir);
+            FileUtil.recursiveCopy(inputSrcShareDir, outputSrcDir);
         }
 
         try (InputStream is = TestExtractor.class.getClassLoader().getResourceAsStream("jckextractor/res/TestMakefile.mk")) {
