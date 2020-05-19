@@ -15,7 +15,7 @@ $(SCRIPTS): %.ksh: | classes $(LIBS)
 
 classes:
 	mkdir classes
-	$(JAVAC) -d classes -g -sourcepath src $$( find tests -type f -name '*.java' )
+	$(JAVAC) -d classes -g $$( find src tests -type f -name '*.java' )
 
 lib:
 	mkdir lib

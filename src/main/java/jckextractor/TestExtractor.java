@@ -24,23 +24,78 @@
 package jckextractor;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  *
  * @author zzambers
  */
 public class TestExtractor {
+
+    private static final Pattern pkgPattern = Pattern.compile("^\\s*package\\s+([A-Za-z0-9$_.-]+)\\s*;");
+    private static final Pattern javaSrcPattern = Pattern.compile("\"([A-Za-z0-9$_.-]+\\.java)\"");
+
+    public static String getPackage(Path path) throws IOException {
+        return FileUtil.findPatternFirst(path, pkgPattern);
+    }
+
+    public static Set<String> getJavaSrcs(Path path) throws IOException {
+        return FileUtil.findPattern(path, javaSrcPattern);
+    }
+
+    /* not all src files are stored in correct directory structure according to
+       their package, this method creates that structure and links source files
+       from there */
+    public static void createdFixedSrcTree(final Path src, final Path dst, final boolean recursive) throws IOException {
+        FileVisitor<Path> fv = new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path t, BasicFileAttributes bfa) throws IOException {
+                if (recursive == false && !t.equals(src)) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path t, BasicFileAttributes bfa) throws IOException {
+                String filename = t.getFileName().toString();
+                if (filename.equals("module-info.java")) {
+                    return FileVisitResult.SKIP_SIBLINGS;
+                }
+                if (filename.endsWith(".java")) {
+                    String pkg = getPackage(t);
+                    if (pkg != null) {
+                        Path pkgDirRel = FileUtil.getPath(dst.getFileSystem(), pkg.split("[.]"));
+                        Path pkgDir = dst.resolve(pkgDirRel);
+                        Files.createDirectories(pkgDir);
+                        Path linkFile = pkgDir.resolve(filename);
+                        if (!Files.exists(linkFile)) {
+                            Files.createSymbolicLink(linkFile, t);
+                        }
+                    }
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+        };
+        Files.walkFileTree(src, fv);
+    }
 
     public static void extractTest(Options options) throws Exception {
         Set<String> depsStrings = new HashSet();
@@ -62,6 +117,7 @@ public class TestExtractor {
         }
 
         Path inputSrcDir = options.jckDir.resolve("src");
+        /*
         Path testSrcDir2 = inputSrcDir.resolve(options.jckDir.relativize(options.testSrcDir));
         if (Files.isDirectory(testSrcDir2)) {
             try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(options.testSrcDir)) {
@@ -76,6 +132,7 @@ public class TestExtractor {
                 }
             }
         }
+         */
 
         List<File> srcDirs = new ArrayList();
         srcDirs.add(inputSrcDir.toFile());
@@ -90,7 +147,44 @@ public class TestExtractor {
             }
         }
 
-        DependenciesGetter.getDependencies(depsStrings, javaSrcFiles, srcDirs);
+        Path p = Files.createTempDirectory("jck-extr");
+        try {
+            /* test files in correct dir structure */
+            Path testSrcDirFixed = p.resolve("tests");
+            createdFixedSrcTree(options.testSrcDir, testSrcDirFixed, true);
+            Path currentDir = options.testSrcDir.getParent();
+            while (!currentDir.equals(options.jckDir)) {
+                createdFixedSrcTree(currentDir, testSrcDirFixed, false);
+                currentDir = currentDir.getParent();
+            }
+            srcDirs.add(testSrcDirFixed.toFile());
+
+            /* files from src/test in correct dir structure */
+            Path inputSrcTestDir = inputSrcDir.resolve("tests");
+            if (Files.isDirectory(inputSrcTestDir)) {
+                Path srcTestDirFixed = p.resolve("src-tests");
+                Files.createDirectory(srcTestDirFixed);
+                createdFixedSrcTree(inputSrcTestDir, srcTestDirFixed, true);
+                srcDirs.add(srcTestDirFixed.toFile());
+            }
+
+            /* Find dependencies*/
+            DependenciesGetter.getDependencies(depsStrings, javaSrcFiles, srcDirs);
+
+            /* Convert symbolic links */
+            Set set2 = new HashSet();
+            FileSystem fs = options.jckDir.getFileSystem();
+            for (String depString : depsStrings) {
+                Path srcFile = fs.getPath(depString);
+                if (Files.isSymbolicLink(srcFile)) {
+                    srcFile = Files.readSymbolicLink(srcFile);
+                }
+                set2.add(srcFile.toString());
+            }
+            depsStrings = set2;
+        } finally {
+            FileUtil.recursiveDelete(p);
+        }
 
         FileSystem fs = options.jckDir.getFileSystem();
         for (String depString : depsStrings) {

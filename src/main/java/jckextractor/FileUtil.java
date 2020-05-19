@@ -23,13 +23,22 @@
  */
 package jckextractor;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.FileSystem;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -55,4 +64,62 @@ public class FileUtil {
         };
         Files.walkFileTree(srcDir, fv);
     }
+
+    public static void recursiveDelete(final Path file) throws IOException {
+        FileVisitor<Path> fv = new SimpleFileVisitor<Path>() {
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                if (exc != null) {
+                    throw exc;
+                }
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        };
+        Files.walkFileTree(file, fv);
+    }
+
+    public static Path getPath(FileSystem fs, String... path) {
+        int pathLength = path.length;
+        if (pathLength > 1) {
+            return fs.getPath(path[0], Arrays.<String>copyOfRange(path, 1, pathLength));
+        }
+        if (pathLength == 1) {
+            return fs.getPath(path[0]);
+        }
+        throw new IllegalArgumentException();
+    }
+
+    static Set<String> findPattern(Path path, Pattern p) throws IOException {
+        List<String> lines = Files.readAllLines(path, Charset.forName("UTF-8"));
+        Set<String> matches = new HashSet<>();
+        for (String line : lines) {
+            Matcher m = p.matcher(line);
+            while (m.find()) {
+                matches.add(m.group(m.groupCount() > 0 ? 1 : 0));
+            }
+        }
+        return matches;
+    }
+
+    static String findPatternFirst(Path path, Pattern p) throws IOException {
+        try (BufferedReader br = Files.newBufferedReader(path, Charset.forName("UTF-8"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                Matcher m = p.matcher(line);
+                if (m.find()) {
+                    return m.group(m.groupCount() > 0 ? 1 : 0);
+                }
+            }
+        }
+        return null;
+    }
+
 }
