@@ -100,6 +100,7 @@ public class TestExtractor {
     public static void extractTest(Options options) throws Exception {
         Set<String> depsStrings = new HashSet();
         List<File> javaSrcFiles = new ArrayList();
+        List<Path> shellScripts = new ArrayList();
         boolean hasNatives = false;
 
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(options.testSrcDir)) {
@@ -110,6 +111,8 @@ public class TestExtractor {
                         javaSrcFiles.add(p.toFile());
                     } else if (name.endsWith(".c")) {
                         hasNatives = true;
+                    } else if (name.endsWith(".ksh")) {
+                        shellScripts.add(p);
                     }
                     depsStrings.add(name);
                 }

@@ -71,7 +71,7 @@ public class DependenciesGetter {
                 deps.add(((JavaFileObject) o).getName());
             }
         } finally {
-            tmp.delete();
+            FileUtil.recursiveDelete(tmp.toPath());
         }
     }
 
