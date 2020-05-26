@@ -26,6 +26,7 @@ package jckextractor;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -40,6 +41,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -49,6 +51,8 @@ import java.util.regex.Pattern;
 public class TestExtractor {
 
     private static final Pattern pkgPattern = Pattern.compile("^\\s*package\\s+([A-Za-z0-9$_.-]+)\\s*;");
+    private static final Pattern binJavaPattern = Pattern.compile("^.*bin/java.*$");
+    private static final Pattern classNamePattern = Pattern.compile("[A-Za-z_$][A-Za-z0-9_$-]*[.][.A-Za-z0-9_$-]+");
     private static final Pattern javaSrcPattern = Pattern.compile("\"([A-Za-z0-9$_.-]+\\.java)\"");
 
     public static String getPackage(Path path) throws IOException {
@@ -97,10 +101,19 @@ public class TestExtractor {
         Files.walkFileTree(src, fv);
     }
 
+    public static void getKshClasses(List<String> clses, Path ksh) throws IOException {
+        String javaLine = FileUtil.findPatternFirst(ksh, binJavaPattern);
+        Matcher m = classNamePattern.matcher(javaLine);
+        while (m.find()) {
+            String className = m.group();
+            clses.add(className);
+        }
+    }
+
     public static void extractTest(Options options) throws Exception {
         Set<String> depsStrings = new HashSet();
         List<File> javaSrcFiles = new ArrayList();
-        List<Path> shellScripts = new ArrayList();
+        List<String> kshClasses = new ArrayList();
         boolean hasNatives = false;
 
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(options.testSrcDir)) {
@@ -112,7 +125,7 @@ public class TestExtractor {
                     } else if (name.endsWith(".c")) {
                         hasNatives = true;
                     } else if (name.endsWith(".ksh")) {
-                        shellScripts.add(p);
+                        getKshClasses(kshClasses, p);
                     }
                     depsStrings.add(name);
                 }
@@ -172,7 +185,28 @@ public class TestExtractor {
             }
 
             /* Find dependencies*/
-            DependenciesGetter.getDependencies(depsStrings, javaSrcFiles, srcDirs);
+            List<File> javaSrcFileList = new ArrayList();
+            for (File f : javaSrcFiles) {
+                javaSrcFileList.add(f);
+                DependenciesGetter.getDependencies(depsStrings, javaSrcFileList, srcDirs);
+                javaSrcFileList.clear();
+            }
+
+            /* Find possible classes named in ksh scripts */
+            List<String> dummyFileLines = new ArrayList();
+            Path dummyClassFile = p.resolve("DummyExtractorClass.java");
+            for (String s : kshClasses) {
+                dummyFileLines.add("import " + s + ";");
+                dummyFileLines.add("class DummyExtractorClass {");
+                dummyFileLines.add(s + " field;");
+                dummyFileLines.add("}");
+                Files.write(dummyClassFile, dummyFileLines, Charset.defaultCharset());
+                dummyFileLines.clear();
+                javaSrcFileList.add(dummyClassFile.toFile());
+                DependenciesGetter.getDependencies(depsStrings, javaSrcFileList, srcDirs);
+                javaSrcFileList.clear();
+                Files.delete(dummyClassFile);
+            }
 
             /* Convert symbolic links */
             Set set2 = new HashSet();

@@ -181,6 +181,14 @@ public class TestExtractorTest {
         Files.write(testTestLib, lines, Charset.defaultCharset());
         lines.clear();
 
+        Path testKshDepSourcesDir = tests.resolve("api").resolve("api_pkg").resolve("testKshDep");
+        Files.createDirectories(testKshDepSourcesDir);
+        Path testKshDepShell = testKshDepSourcesDir.resolve("testKshDep.ksh");
+
+        lines.add("#!/bin/ksh");
+        lines.add(" bin/java -somearg=direct.pkg.DirectA -arg2 jck.pkg.JckA ");
+        Files.write(testKshDepShell, lines, Charset.defaultCharset());
+        lines.clear();
     }
 
     public Path getOutputFor(Path p) {
@@ -269,6 +277,16 @@ public class TestExtractorTest {
         AssertExtracted(directA, false);
         AssertExtracted(jckAClass, false);
         AssertExtracted(testsAClass, true);
+        AssertExtracted(test2Parent, false);
+    }
+
+    @Test
+    public void testKshDep() throws Exception {
+        runExtractor("api/api_pkg/testKshDep");
+        AssertExtracted(testTestLib, false);
+        AssertExtracted(directA, true);
+        AssertExtracted(jckAClass, true);
+        AssertExtracted(testsAClass, false);
         AssertExtracted(test2Parent, false);
     }
 
