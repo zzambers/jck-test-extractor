@@ -23,10 +23,13 @@
  */
 package jckextractor;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -38,6 +41,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -243,6 +247,39 @@ public class TestExtractor {
             Files.copy(is, options.outputDir.resolve("Makefile"));
         }
 
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(TestExtractor.class.getClassLoader().getResourceAsStream("jckextractor/res/tryRun.sh"), "UTF-8"))) {
+            while (true) {
+                String s = br.readLine();
+                if (s == null) {
+                    break;
+                }
+                sb.append(s).append("\n");
+            }
+        }
+        String tryRun = sb.toString()
+                .replace("{TEST}", options.testNameArg)
+                .replace("{DATE}", new Date().toString())
+                .replace("{JENKINS_URL}", envWithDefault("JENKINS_URL"))
+                .replace("{JOB_NAME}", envWithDefault("JOB_NAME"))
+                .replace("{BUILD_ID}", envWithDefault("BUILD_ID"));
+        String jto = System.getenv("JAVA_TOOL_OPTIONS");
+        if (jto == null) {
+            tryRun = tryRun.replace("={JAVA_TOOL_OPTIONS}", "=").replace("#{JAVA_TOOL_OPTIONS}", "# no JAVA_TOOL_OPTIONS found in runtime of this tool");
+        } else {
+            tryRun = tryRun.replace("={JAVA_TOOL_OPTIONS}", "='" + jto + "'").replace("#{JAVA_TOOL_OPTIONS}", "export JAVA_TOOL_OPTIONS='" + jto + "'");
+        }
+        Files.write(options.outputDir.resolve("tryRun.sh"), tryRun.getBytes(StandardCharsets.UTF_8));
+
+    }
+
+    private static CharSequence envWithDefault(String key) {
+        String s = System.getenv(key);
+        if (s == null) {
+            return "missing-" + key;
+        } else {
+            return s;
+        }
     }
 
     public static class Options {
