@@ -259,10 +259,15 @@ public class TestExtractor {
         }
         String tryRun = sb.toString()
                 .replace("{TEST}", options.testNameArg)
-                .replace("{DATE}", new Date().toString())
-                .replace("{JENKINS_URL}", envWithDefault("JENKINS_URL"))
-                .replace("{JOB_NAME}", envWithDefault("JOB_NAME"))
-                .replace("{BUILD_ID}", envWithDefault("BUILD_ID"));
+                .replace("{DATE}", new Date().toString());
+        if (System.getenv("JENKINS_URL") == null){
+            tryRun = tryRun.replaceAll(".*\\{JENKINS_URL\\}.*", "");
+        } else {
+            tryRun = tryRun
+                    .replace("{JENKINS_URL}", envWithDefault("JENKINS_URL"))
+                    .replace("{JOB_NAME}", envWithDefault("JOB_NAME"))
+                    .replace("{BUILD_ID}", envWithDefault("BUILD_ID"));
+        }
         String jto = System.getenv("JAVA_TOOL_OPTIONS");
         if (jto == null) {
             tryRun = tryRun.replace("={JAVA_TOOL_OPTIONS}", "=").replace("#{JAVA_TOOL_OPTIONS}", "# no JAVA_TOOL_OPTIONS found in runtime of this tool");
