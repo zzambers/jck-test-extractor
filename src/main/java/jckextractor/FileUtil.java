@@ -97,29 +97,37 @@ public class FileUtil {
         throw new IllegalArgumentException();
     }
 
-    static Set<String> findPattern(Path path, Pattern p) throws IOException {
+    static Set<String> findPattern(Path path, Pattern p, int group) throws IOException {
         List<String> lines = Files.readAllLines(path, Charset.forName("UTF-8"));
         Set<String> matches = new HashSet<>();
         for (String line : lines) {
             Matcher m = p.matcher(line);
             while (m.find()) {
-                matches.add(m.group(m.groupCount() > 0 ? 1 : 0));
+                matches.add(m.group(group));
             }
         }
         return matches;
     }
 
-    static String findPatternFirst(Path path, Pattern p) throws IOException {
+    static String findPatternFirst(Path path, Pattern p, int group) throws IOException {
         try (BufferedReader br = Files.newBufferedReader(path, Charset.forName("UTF-8"))) {
             String line;
             while ((line = br.readLine()) != null) {
                 Matcher m = p.matcher(line);
                 if (m.find()) {
-                    return m.group(m.groupCount() > 0 ? 1 : 0);
+                    return m.group(group);
                 }
             }
         }
         return null;
+    }
+
+    static Set<String> findPattern(Path path, Pattern p) throws IOException {
+        return findPattern(path, p, 0);
+    }
+
+    static String findPatternFirst(Path path, Pattern p) throws IOException {
+        return findPatternFirst(path, p, 0);
     }
 
 }

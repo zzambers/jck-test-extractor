@@ -58,13 +58,14 @@ public class TestExtractor {
     private static final Pattern binJavaPattern = Pattern.compile("^.*bin/java.*$");
     private static final Pattern classNamePattern = Pattern.compile("[A-Za-z_$][A-Za-z0-9_$-]*[.][.A-Za-z0-9_$-]+");
     private static final Pattern javaSrcPattern = Pattern.compile("\"([A-Za-z0-9$_.-]+\\.java)\"");
+    private static final Pattern linkPatern = Pattern.compile("<[Aa]\\s+[Hh][Rr][Ee][Ff]=[\"']*([A-Za-z0-9_$-./]*)[\"']*\\s*>");
 
     public static String getPackage(Path path) throws IOException {
-        return FileUtil.findPatternFirst(path, pkgPattern);
+        return FileUtil.findPatternFirst(path, pkgPattern, 1);
     }
 
     public static Set<String> getJavaSrcs(Path path) throws IOException {
-        return FileUtil.findPattern(path, javaSrcPattern);
+        return FileUtil.findPattern(path, javaSrcPattern, 1);
     }
 
     /* not all src files are stored in correct directory structure according to
@@ -114,6 +115,33 @@ public class TestExtractor {
         }
     }
 
+    public static void getHtmlLinkedFiles(Set<String> depsStrings, Path html, Options options) throws Exception {
+        /* good enough for now */
+        Set<String> links = FileUtil.findPattern(html, linkPatern, 1);
+        for (String target : links) {
+            if (target.startsWith("/")) {
+                /* ignore absolute path */
+                continue;
+            }
+            String[] components = target.split("/");
+            if (components[0].endsWith(":")) {
+                /* ignore absolute path / url with scheme */
+                continue;
+            }
+            try {
+                FileSystem fs = options.jckDir.getFileSystem();
+                Path targetPath = FileUtil.getPath(fs, components);
+                Path targetPathFull = options.testSrcDir.resolve(targetPath);
+                /* make sure file is within tck directory */
+                if (targetPathFull.normalize().startsWith(options.jckDir.normalize())) {
+                    depsStrings.add(targetPathFull.toString());
+                }
+            } catch (Exception e) {
+                /* invalid links are just ignored ... */
+            }
+        }
+    }
+
     public static void extractTest(Options options) throws Exception {
         Set<String> depsStrings = new HashSet();
         List<File> javaSrcFiles = new ArrayList();
@@ -130,6 +158,8 @@ public class TestExtractor {
                         hasNatives = true;
                     } else if (name.endsWith(".ksh")) {
                         getKshClasses(kshClasses, p);
+                    } else if (name.endsWith(".html")) {
+                        getHtmlLinkedFiles(depsStrings, p, options);
                     }
                     depsStrings.add(name);
                 }

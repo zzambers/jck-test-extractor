@@ -57,6 +57,9 @@ public class TestExtractorTest {
     Path jckAClass = null;
     Path testsAClass = null;
     Path test2Parent = null;
+    /* other */
+    Path testHtml = null;
+    Path linkedByHtml = null;
 
     public void prepareFakeJck(Path jckDir) throws IOException {
         /* top level dirs */
@@ -189,6 +192,29 @@ public class TestExtractorTest {
         lines.add(" bin/java -somearg=direct.pkg.DirectA -arg2 jck.pkg.JckA ");
         Files.write(testKshDepShell, lines, Charset.defaultCharset());
         lines.clear();
+
+        /* html test parent directory
+           with linked file */
+        Path htmlTestParentDir = tests.resolve("api").resolve("api_pkg").resolve("htmlTestParent");
+        Files.createDirectories(htmlTestParentDir);
+        linkedByHtml = htmlTestParentDir.resolve("linked.txt");
+        lines.add("hi!");
+        Files.write(linkedByHtml, lines, Charset.defaultCharset());
+        lines.clear();
+        /* test class */
+        Path htmlTestDir = htmlTestParentDir.resolve("testHtml");
+        Files.createDirectories(htmlTestDir);
+        testHtml = htmlTestDir.resolve("test.html");
+        lines.add("<!DOCTYPE HTML>");
+        lines.add("<html>");
+        lines.add("<head>");
+        lines.add("</head>");
+        lines.add("<body>");
+        lines.add("<a href=\"../linked.txt\">../linked.txt</a>");
+        lines.add("</body>");
+        lines.add("</html>");
+        Files.write(testHtml, lines, Charset.defaultCharset());
+        lines.clear();
     }
 
     public Path getOutputFor(Path p) {
@@ -238,6 +264,8 @@ public class TestExtractorTest {
         AssertExtracted(jckAClass, false);
         AssertExtracted(testsAClass, false);
         AssertExtracted(test2Parent, false);
+        AssertExtracted(testHtml, false);
+        AssertExtracted(linkedByHtml, false);
     }
 
     @Test
@@ -248,6 +276,8 @@ public class TestExtractorTest {
         AssertExtracted(jckAClass, false);
         AssertExtracted(testsAClass, false);
         AssertExtracted(test2Parent, true);
+        AssertExtracted(testHtml, false);
+        AssertExtracted(linkedByHtml, false);
     }
 
     @Test
@@ -258,6 +288,8 @@ public class TestExtractorTest {
         AssertExtracted(jckAClass, false);
         AssertExtracted(testsAClass, false);
         AssertExtracted(test2Parent, false);
+        AssertExtracted(testHtml, false);
+        AssertExtracted(linkedByHtml, false);
     }
 
     @Test
@@ -268,6 +300,8 @@ public class TestExtractorTest {
         AssertExtracted(jckAClass, true);
         AssertExtracted(testsAClass, false);
         AssertExtracted(test2Parent, false);
+        AssertExtracted(testHtml, false);
+        AssertExtracted(linkedByHtml, false);
     }
 
     @Test
@@ -278,6 +312,8 @@ public class TestExtractorTest {
         AssertExtracted(jckAClass, false);
         AssertExtracted(testsAClass, true);
         AssertExtracted(test2Parent, false);
+        AssertExtracted(testHtml, false);
+        AssertExtracted(linkedByHtml, false);
     }
 
     @Test
@@ -288,6 +324,20 @@ public class TestExtractorTest {
         AssertExtracted(jckAClass, true);
         AssertExtracted(testsAClass, false);
         AssertExtracted(test2Parent, false);
+        AssertExtracted(testHtml, false);
+        AssertExtracted(linkedByHtml, false);
+    }
+
+    @Test
+    public void testHtml() throws Exception {
+        runExtractor("api/api_pkg/htmlTestParent/testHtml");
+        AssertExtracted(testTestLib, false);
+        AssertExtracted(directA, false);
+        AssertExtracted(jckAClass, false);
+        AssertExtracted(testsAClass, false);
+        AssertExtracted(test2Parent, false);
+        AssertExtracted(testHtml, true);
+        AssertExtracted(linkedByHtml, true);
     }
 
 }

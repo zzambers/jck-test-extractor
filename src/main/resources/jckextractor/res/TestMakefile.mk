@@ -7,7 +7,7 @@ LIBS=$(shell [ -d src/share/lib/jni ] && echo 'lib/libjckjni.so' ; [ -d src/shar
 
 .PHONY: test clean $(SCRIPTS)
 
-test: $(SCRIPTS)
+test: $(SCRIPTS) | classes $(LIBS)
 
 $(SCRIPTS): %.ksh: | classes $(LIBS)
 	export LD_LIBRARY_PATH=$$(pwd)/lib ; \
