@@ -54,7 +54,7 @@ public class DependenciesGetter {
             tmp.delete();
             tmp.mkdir();
 
-            ArrayList<File> classOutput = new ArrayList();
+            ArrayList<File> classOutput = new ArrayList<File>();
             classOutput.add(tmp);
 
             fileManager.setLocation(StandardLocation.SOURCE_PATH, srcPath);
@@ -62,7 +62,7 @@ public class DependenciesGetter {
 
             Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(sources);
 
-            Set dependencies = new HashSet();
+            Set<JavaFileObject> dependencies = new HashSet<JavaFileObject>();
             try (JavaFileManager manager = new MonitoringFileManager(fileManager, dependencies)) {
                 compiler.getTask(null, manager, null, null, null, compilationUnits).call();
             }
@@ -77,9 +77,9 @@ public class DependenciesGetter {
 
     static class MonitoringFileManager extends ForwardingJavaFileManager<JavaFileManager> {
 
-        final Set set;
+        final Set<JavaFileObject> set;
 
-        public MonitoringFileManager(JavaFileManager m, Set set) {
+        public MonitoringFileManager(JavaFileManager m, Set<JavaFileObject> set) {
             super(m);
             this.set = set;
         }
@@ -139,10 +139,10 @@ public class DependenciesGetter {
         }
 
         @Override
-        public Iterable list(JavaFileManager.Location location, String packageName, Set kinds, boolean recurse) throws IOException {
+        public Iterable<javax.tools.JavaFileObject> list(JavaFileManager.Location location, String packageName, Set<javax.tools.JavaFileObject.Kind> kinds, boolean recurse) throws IOException {
             Iterable<JavaFileObject> iter = super.list(location, packageName, kinds, recurse);
             if (location.equals(StandardLocation.SOURCE_PATH)) {
-                ArrayList list = new ArrayList();
+                ArrayList<JavaFileObject> list = new ArrayList<JavaFileObject>();
                 for (JavaFileObject file : iter) {
                     list.add(new MonitoringJavaFileObject(file, set));
                 }
@@ -156,9 +156,9 @@ public class DependenciesGetter {
     static class MonitoringJavaFileObject extends ForwardingJavaFileObject<JavaFileObject> {
 
         final JavaFileObject file;
-        final Set set;
+        final Set<JavaFileObject> set;
 
-        public MonitoringJavaFileObject(JavaFileObject f, Set set) {
+        public MonitoringJavaFileObject(JavaFileObject f, Set<JavaFileObject> set) {
             super(f);
             this.file = f;
             this.set = set;

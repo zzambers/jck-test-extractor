@@ -143,9 +143,9 @@ public class TestExtractor {
     }
 
     public static void extractTest(Options options) throws Exception {
-        Set<String> depsStrings = new HashSet();
-        List<File> javaSrcFiles = new ArrayList();
-        List<String> kshClasses = new ArrayList();
+        Set<String> depsStrings = new HashSet<String>();
+        List<File> javaSrcFiles = new ArrayList<File>();
+        List<String> kshClasses = new ArrayList<String>();
         boolean hasNatives = false;
 
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(options.testSrcDir)) {
@@ -184,7 +184,7 @@ public class TestExtractor {
         }
          */
 
-        List<File> srcDirs = new ArrayList();
+        List<File> srcDirs = new ArrayList<File>();
         srcDirs.add(inputSrcDir.toFile());
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(inputSrcDir)) {
             for (Path p : dirStream) {
@@ -219,7 +219,7 @@ public class TestExtractor {
             }
 
             /* Find dependencies*/
-            List<File> javaSrcFileList = new ArrayList();
+            List<File> javaSrcFileList = new ArrayList<File>();
             for (File f : javaSrcFiles) {
                 javaSrcFileList.add(f);
                 DependenciesGetter.getDependencies(depsStrings, javaSrcFileList, srcDirs);
@@ -227,7 +227,7 @@ public class TestExtractor {
             }
 
             /* Find possible classes named in ksh scripts */
-            List<String> dummyFileLines = new ArrayList();
+            List<String> dummyFileLines = new ArrayList<String>();
             Path dummyClassFile = p.resolve("DummyExtractorClass.java");
             for (String s : kshClasses) {
                 dummyFileLines.add("import " + s + ";");
@@ -243,7 +243,7 @@ public class TestExtractor {
             }
 
             /* Convert symbolic links */
-            Set set2 = new HashSet();
+            Set<String> set2 = new HashSet<String>();
             FileSystem fs = options.jckDir.getFileSystem();
             for (String depString : depsStrings) {
                 Path srcFile = fs.getPath(depString);

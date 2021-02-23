@@ -78,7 +78,7 @@ public class TestExtractorTest {
         Path srcDirctSourcesDir = src.resolve("direct").resolve("pkg");
         Files.createDirectories(srcDirctSourcesDir);
         directA = srcDirctSourcesDir.resolve("DirectA.java");
-        List<String> lines = new ArrayList();
+        List<String> lines = new ArrayList<String>();
         lines.add("package direct.pkg;");
         lines.add("");
         lines.add("public class DirectA {");
