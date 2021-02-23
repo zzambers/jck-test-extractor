@@ -15,8 +15,8 @@ readonly JAVAC="$JAVA_HOME/bin/javac"
 readonly JAVAP="$JAVA_HOME/bin/javap"
 
 echo "in-dir-script for"
-out=`pwd`/out
-mkdir -p out
+out=`pwd`/classes
+mkdir -p classes
 echo "*** {TEST} ***"
 echo "*** run at {DATE} ***"
 echo "*** Now using: $JAVA_HOME ***"
