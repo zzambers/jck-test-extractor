@@ -403,7 +403,7 @@ public class TestExtractor {
         /* Checks for output-dir */
         Path outputDir = fs.getPath(options.outputDirArg);
         if (!Files.isDirectory(outputDir)) {
-            System.err.println("ERR: Wrong output-dir: " + options.outputDir);
+            System.err.println("ERR: Wrong output-dir: " + options.outputDirArg);
             System.exit(1);
         }
         options.outputDir = outputDir.toAbsolutePath();
