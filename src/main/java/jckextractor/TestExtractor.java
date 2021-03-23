@@ -165,6 +165,13 @@ public class TestExtractor {
                 }
             }
         }
+        for (Path p : options.additionalFiles) {
+            String name = p.toString();
+            if (name.endsWith(".java")) {
+                javaSrcFiles.add(p.toFile());
+            }
+            depsStrings.add(name);
+        }
 
         Path inputSrcDir = options.jckDir.resolve("src");
         /*
@@ -322,11 +329,13 @@ public class TestExtractor {
         String jckDirArg;
         String outputDirArg;
         String testNameArg;
+        Set<String> additionalFilesArgs = new HashSet();
 
         Path jckDir;
         Path outputDir;
         Path testSrcDir;
         Path htmlFile;
+        Set<Path> additionalFiles = new HashSet();
     }
 
     public static void printHelp() {
@@ -355,6 +364,9 @@ public class TestExtractor {
                     break;
                 case "--test":
                     options.testNameArg = args[++i];
+                    break;
+                case "--additional-file":
+                    options.additionalFilesArgs.add(args[++i]);
                     break;
                 default:
                     System.err.println("ERR: Unknown arg: " + args[i]);
@@ -385,7 +397,8 @@ public class TestExtractor {
             System.err.println("ERR: Wrong jck-dir: " + options.jckDirArg);
             System.exit(1);
         }
-        options.jckDir = jckDir.toAbsolutePath();
+        jckDir = jckDir.toAbsolutePath();
+        options.jckDir = jckDir;
 
         /* Checks for output-dir */
         Path outputDir = fs.getPath(options.outputDirArg);
@@ -424,7 +437,14 @@ public class TestExtractor {
             System.exit(1);
         }
         options.testSrcDir = testSrcDir.toAbsolutePath();
-
+        for (String additionalFileArg : options.additionalFilesArgs) {
+            Path additionalFile = jckDir.resolve(additionalFileArg);
+            if (!Files.exists(additionalFile)) {
+                System.err.println("ERR: Additional file does not exist file: " + additionalFile);
+                System.exit(1);
+            }
+            options.additionalFiles.add(additionalFile);
+        }
         return options;
     }
 
